@@ -24,7 +24,7 @@ public class RagService {
 
     private final OllamaChatModel ollama;
     private final MultiQueryRetriever retriever;
-    private final ChatMemory chatMemory;  // <-- Spring AI chat memory
+    private final ChatMemory chatMemory;
 
     public RagService(OllamaChatModel ollama, MultiQueryRetriever retriever, ChatMemory chatMemory) {
         this.ollama = ollama;
