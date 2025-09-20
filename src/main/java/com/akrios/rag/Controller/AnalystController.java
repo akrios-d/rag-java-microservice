@@ -15,17 +15,16 @@ public class AnalystController {
         this.analystService = analystService;
     }
 
-    @PostMapping("/interact")
-    public Map<String, Object> interact(
+    @PostMapping("/analyst/interact")
+    public Map<String, String> analystInteract(
             @RequestParam String userId,
             @RequestBody Map<String, String> body) {
-        String userMessage = body.get("message");
-        return analystService.interact(userId, userMessage);
+
+        String message = body.get("message");
+        String response = analystService.interact(userId, message);
+
+        return Map.of("response", response);
     }
 
-    @GetMapping("/generate")
-    public String generate(@RequestParam String userId) {
-        return analystService.finalizeRequirements(userId);
-    }
 }
 

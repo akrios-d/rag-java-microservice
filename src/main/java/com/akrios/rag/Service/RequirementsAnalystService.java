@@ -1,96 +1,68 @@
 package com.akrios.rag.Service;
 
+import com.akrios.rag.Prompts.PromptTemplates;
+import com.akrios.rag.Service.Core.DocWriterService;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-
-import static com.akrios.rag.Prompts.PromptTemplates.SYSTEM_REQUIREMENTS_ANALYST;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class RequirementsAnalystService {
 
+    private static final Logger logger = Logger.getLogger(RequirementsAnalystService.class.getName());
+
     private final OllamaChatModel chatModel;
+    private final DocWriterService docWriterService;
 
-    // Store structured requirements in memory
-    private final Map<String, List<Map<String, String>>> sessionRequirements = new HashMap<>();
+    // Store user interactions in memory
+    private final Map<String, List<String>> chatMemory = new ConcurrentHashMap<>();
 
-    public RequirementsAnalystService(OllamaChatModel chatModel) {
+    public RequirementsAnalystService(OllamaChatModel chatModel, DocWriterService docWriterService) {
         this.chatModel = chatModel;
+        this.docWriterService = docWriterService;
     }
 
-    public Map<String, Object> interact(String userId, String userMessage) {
-        // Step 1: Call analyst agent
-        String prompt = SYSTEM_REQUIREMENTS_ANALYST +
-                "\n\nConversation so far:\n" +
-                getRequirementsText(userId) +
-                "\n\nUser: " + userMessage;
+    /**
+     * Handle user interaction with the analyst agent
+     */
+    public String interact(String userId, String userMessage) {
+        logger.info("User [" + userId + "] message: " + userMessage);
 
-        String aiResponse = chatModel.call(prompt);
+        // Initialize memory for new user
+        chatMemory.putIfAbsent(userId, new ArrayList<>());
+        List<String> memory = chatMemory.get(userId);
+        memory.add("User: " + userMessage);
 
-        // Step 2: Update structured requirements (naïve categorization for demo)
-        String category = detectCategory(userMessage);
-        sessionRequirements.computeIfAbsent(userId, k -> new ArrayList<>())
-                .add(Map.of("category", category, "text", userMessage));
+        // If user types "generate", we finalize
+        if ("generate".equalsIgnoreCase(userMessage.trim())) {
+            logger.info("User [" + userId + "] requested document generation.");
+            String collectedRequirements = memory.stream()
+                    .filter(msg -> !msg.equalsIgnoreCase("generate"))
+                    .collect(Collectors.joining("\n"));
 
-        // Step 3: Build partial draft (based on collected requirements so far)
-        String partialDraft = buildPartialDraft(userId);
+            // Clear memory for next session
+            chatMemory.remove(userId);
 
-        // Step 4: Return structured + human-readable
-        return Map.of(
-                "aiResponse", aiResponse,
-                "partialDraft", partialDraft,
-                "requirements", sessionRequirements.get(userId)
-        );
-    }
+            // Call Doc Writer to generate documentation
+            String document = docWriterService.generateDocumentation(collectedRequirements);
+            logger.info("Documentation generated for user [" + userId + "]");
+            return document;
+        }
 
-    public String finalizeRequirements(String userId) {
-        List<Map<String, String>> reqs = sessionRequirements.getOrDefault(userId, List.of());
-        if (reqs.isEmpty()) return "No requirements collected yet.";
+        // Otherwise, generate partial response / follow-up questions
+        String prompt = PromptTemplates.SYSTEM_REQUIREMENTS_ANALYST
+                + "\n\nConversation so far:\n"
+                + String.join("\n", memory)
+                + "\n\nUser just said:\n" + userMessage;
 
-        StringBuilder sb = new StringBuilder("# Requirements Summary\n\n");
-        reqs.forEach(r ->
-                sb.append("- [").append(r.get("category")).append("] ")
-                        .append(r.get("text")).append("\n")
-        );
-        return sb.toString();
-    }
+        String partialResponse = chatModel.call(prompt);
+        logger.info("Partial response generated for user [" + userId + "]");
 
-    private String buildPartialDraft(String userId) {
-        List<Map<String, String>> reqs = sessionRequirements.getOrDefault(userId, List.of());
-        if (reqs.isEmpty()) return "No requirements captured yet.";
-
-        StringBuilder sb = new StringBuilder("📑 Current Draft:\n\n");
-        reqs.forEach(r -> {
-            switch (r.get("category")) {
-                case "Functional" ->
-                        sb.append("• The system must ").append(r.get("text")).append("\n");
-                case "Non-Functional" ->
-                        sb.append("• Performance/Security constraint: ").append(r.get("text")).append("\n");
-                case "Constraint" ->
-                        sb.append("• Constraint: ").append(r.get("text")).append("\n");
-                default ->
-                        sb.append("• Note: ").append(r.get("text")).append("\n");
-            }
-        });
-        return sb.toString();
-    }
-
-    private String detectCategory(String input) {
-        String lower = input.toLowerCase();
-        if (lower.contains("must") || lower.contains("should"))
-            return "Functional";
-        if (lower.contains("performance") || lower.contains("latency") || lower.contains("security"))
-            return "Non-Functional";
-        if (lower.contains("constraint") || lower.contains("limit"))
-            return "Constraint";
-        return "General";
-    }
-
-    private String getRequirementsText(String userId) {
-        return sessionRequirements.getOrDefault(userId, List.of())
-                .stream()
-                .map(r -> "[" + r.get("category") + "] " + r.get("text"))
-                .reduce("", (a, b) -> a + "\n" + b);
+        memory.add("AI: " + partialResponse);
+        return partialResponse;
     }
 }
