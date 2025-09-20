@@ -1,4 +1,4 @@
-package com.akrios.rag.Service;
+package com.akrios.rag.Service.Core;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -36,38 +36,49 @@ public class VectorStoreService {
      * Initialize vector store: load, chunk, and embed
      */
     public void initialize() {
-        logger.info("Initializing vector store...");
+        logger.info("Starting vector store initialization...");
 
         List<Document> docs = loaderService.loadDocuments();
-        logger.info("Loaded " + docs.size() + " documents.");
+        logger.info("Loaded " + docs.size() + " raw documents from loader service.");
 
         List<Document> chunkedDocs = chunkDocuments(docs);
-        logger.info("Total chunks created: " + chunkedDocs.size());
+        logger.info("Created " + chunkedDocs.size() + " document chunks.");
 
         // Add to vector store
-        vectorStore.add(chunkedDocs);
+        try {
+            vectorStore.add(chunkedDocs);
+            logger.info("Added chunks to backend vector store successfully.");
+        } catch (Exception e) {
+            logger.warning("Failed to add chunks to vector store. Falling back to in-memory only. Error: " + e.getMessage());
+        }
 
         // Also populate in-memory fallback
+        logger.info("Populating in-memory fallback embeddings...");
         for (Document doc : chunkedDocs) {
-            inMemoryDocs.add(doc);
             float[] embArray = embeddingModel.embed(Objects.requireNonNull(doc.getText()));
             double[] emb = new double[embArray.length];
             for (int i = 0; i < embArray.length; i++) emb[i] = embArray[i];
+            inMemoryDocs.add(doc);
             inMemoryEmbeddings.add(emb);
         }
+        logger.info("In-memory fallback populated with " + inMemoryDocs.size() + " embeddings.");
 
-        logger.info("Vector store initialized successfully.");
+        logger.info("Vector store initialization completed.");
     }
 
     /**
      * Search documents via vector store or in-memory fallback
      */
     public List<Document> search(String query, int topK) {
+        logger.info("Searching for query: \"" + query + "\" with topK=" + topK);
+
         float[] queryArray = embeddingModel.embed(query);
         double[] queryVec = new double[queryArray.length];
         for (int i = 0; i < queryArray.length; i++) queryVec[i] = queryArray[i];
 
-        PriorityQueue<Map.Entry<Document, Double>> pq = new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
+        PriorityQueue<Map.Entry<Document, Double>> pq =
+                new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
+
         for (int i = 0; i < inMemoryDocs.size(); i++) {
             double sim = cosineSimilarity(queryVec, inMemoryEmbeddings.get(i));
             pq.offer(new AbstractMap.SimpleEntry<>(inMemoryDocs.get(i), sim));
@@ -77,11 +88,14 @@ public class VectorStoreService {
         List<Document> results = new ArrayList<>();
         while (!pq.isEmpty()) results.add(pq.poll().getKey());
         Collections.reverse(results);
+
+        logger.info("Search completed. Returning " + results.size() + " documents.");
         return results;
     }
 
-
     private List<Document> chunkDocuments(List<Document> docs) {
+        logger.info("Starting document chunking with size=" + DEFAULT_CHUNK_SIZE +
+                " and overlap=" + DEFAULT_CHUNK_OVERLAP);
         List<Document> chunks = new ArrayList<>();
         for (Document doc : docs) {
             String text = doc.getText();
@@ -95,25 +109,8 @@ public class VectorStoreService {
                 start += DEFAULT_CHUNK_SIZE - DEFAULT_CHUNK_OVERLAP;
             }
         }
+        logger.info("Finished chunking. Created " + chunks.size() + " chunks.");
         return chunks;
-    }
-
-    private List<Document> searchInMemory(String query, int topK) {
-        float[] queryArray = embeddingModel.embed(query);
-        double[] queryVec = new double[queryArray.length];
-        for (int i = 0; i < queryArray.length; i++) queryVec[i] = queryArray[i];
-
-        PriorityQueue<Map.Entry<Document, Double>> pq = new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
-        for (int i = 0; i < inMemoryDocs.size(); i++) {
-            double sim = cosineSimilarity(queryVec, inMemoryEmbeddings.get(i));
-            pq.offer(new AbstractMap.SimpleEntry<>(inMemoryDocs.get(i), sim));
-            if (pq.size() > topK) pq.poll();
-        }
-
-        List<Document> results = new ArrayList<>();
-        while (!pq.isEmpty()) results.add(pq.poll().getKey());
-        Collections.reverse(results);
-        return results;
     }
 
     private double cosineSimilarity(double[] a, double[] b) {

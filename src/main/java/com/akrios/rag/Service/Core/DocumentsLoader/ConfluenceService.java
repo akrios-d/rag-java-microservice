@@ -1,4 +1,4 @@
-package com.akrios.rag.Service.DocumentsLoader;
+package com.akrios.rag.Service.Core.DocumentsLoader;
 
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;

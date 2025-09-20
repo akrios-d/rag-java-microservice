@@ -1,4 +1,4 @@
-package com.akrios.rag.Service;
+package com.akrios.rag.Service.Core;
 
 import org.springframework.stereotype.Service;
 

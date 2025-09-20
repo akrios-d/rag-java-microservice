@@ -1,6 +1,6 @@
 package com.akrios.rag.Controller;
 
-import com.akrios.rag.Service.VectorStoreService;
+import com.akrios.rag.Service.Core.VectorStoreService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.logging.Logger;

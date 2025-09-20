@@ -1,8 +1,8 @@
-package com.akrios.rag.Service;
+package com.akrios.rag.Service.Core;
 
 import com.akrios.rag.Config.DocumentLoaderConfig;
-import com.akrios.rag.Service.DocumentsLoader.ConfluenceService;
-import com.akrios.rag.Service.DocumentsLoader.LocalFileService;
+import com.akrios.rag.Service.Core.DocumentsLoader.ConfluenceService;
+import com.akrios.rag.Service.Core.DocumentsLoader.LocalFileService;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
@@ -28,20 +28,24 @@ public class DocumentLoaderService {
     }
 
     public List<Document> loadDocuments() {
-        logger.info("Loading documents...");
+        logger.info("=== Document Loading Started ===");
 
-        logger.info("Loading documents from local files...");
+        // Load local files
+        logger.info("Attempting to load documents from local files...");
         List<Document> docs = new ArrayList<>(localFileService.loadLocalFiles());
         logger.info("Loaded " + docs.size() + " documents from local files.");
 
+        // Load Confluence docs if enabled
         if (config.useConfluence) {
-            logger.info("Fetching documents from Confluence...");
+            logger.info("Confluence integration enabled. Fetching documents from Confluence...");
             List<Document> confluenceDocs = confluenceService.fetchPages();
+            logger.info("Retrieved " + confluenceDocs.size() + " documents from Confluence.");
             docs.addAll(confluenceDocs);
-            logger.info("Loaded " + confluenceDocs.size() + " documents from Confluence.");
+        } else {
+            logger.info("Confluence integration disabled. Skipping Confluence fetch.");
         }
 
-        logger.info("Total " + docs.size() + " documents loaded.");
+        logger.info("=== Document Loading Completed. Total documents: " + docs.size() + " ===");
         return docs;
     }
 }
