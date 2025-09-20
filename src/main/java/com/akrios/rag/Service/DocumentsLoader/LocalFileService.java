@@ -3,6 +3,7 @@ package com.akrios.rag.Service.DocumentsLoader;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -19,12 +20,10 @@ public class LocalFileService {
     public List<Document> loadLocalFiles() {
         List<Document> docs = new ArrayList<>();
         try {
-            // Adjust the folder path inside resources
-            Resource folder = new ClassPathResource("local_files");
-            Resource[] resources = folder.getFile().listFiles() != null ?
-                    (Resource[]) folder.getFile().listFiles() : new Resource[0];
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            // Load all files under resources/local_files
+            Resource[] resources = resolver.getResources("classpath:local_files/*");
 
-            assert resources != null;
             for (Resource res : resources) {
                 if (res.isFile()) {
                     StringBuilder content = new StringBuilder();
@@ -37,7 +36,10 @@ public class LocalFileService {
                     }
                     docs.add(Document.builder()
                             .text(content.toString())
-                            .metadata(Map.of("source", "local_file", "path", Objects.requireNonNull(res.getFilename())))
+                            .metadata(Map.of(
+                                    "source", "local_file",
+                                    "path", res.getFilename() != null ? res.getFilename() : "unknown"
+                            ))
                             .build());
                 }
             }
