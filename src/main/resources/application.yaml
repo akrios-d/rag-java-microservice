@@ -6,6 +6,11 @@ spring:
         options:
           model: llama3.2
           temperature: 0.7
+      embedding:
+        options:
+          model: nomic-embed-text
+      pgvector:
+        initialize-schema: true
   application:
     name: rag
   management:
@@ -17,3 +22,5 @@ spring:
 server:
   port: 8081
 
+rag:
+  useConfluence: false

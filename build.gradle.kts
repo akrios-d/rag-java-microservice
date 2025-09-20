@@ -34,6 +34,7 @@ dependencies {
 	//implementation("org.springframework.boot:spring-boot-starter-hateoas")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.ai:spring-ai-advisors-vector-store")
+	implementation("org.springframework.ai:spring-ai-rag")
 	implementation("org.springframework.ai:spring-ai-markdown-document-reader")
 	implementation("org.springframework.ai:spring-ai-pdf-document-reader")
 	//implementation("org.springframework.ai:spring-ai-starter-mcp-client")
@@ -53,6 +54,9 @@ dependencies {
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	implementation("org.springframework.ai:spring-ai-client-chat")
+	implementation("org.springframework.ai:spring-ai-core")
 }
 
 dependencyManagement {
