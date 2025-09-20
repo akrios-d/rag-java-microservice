@@ -31,18 +31,17 @@ public class DocumentLoaderService {
         logger.info("Loading documents...");
 
         logger.info("Loading documents from local files...");
-        List<Document> localDocs = localFileService.loadLocalFiles();
-        List<Document> documents = new ArrayList<>(localDocs);
-        logger.info("Loaded " + localDocs.size() + " documents from local files.");
+        List<Document> docs = new ArrayList<>(localFileService.loadLocalFiles());
+        logger.info("Loaded " + docs.size() + " documents from local files.");
 
         if (config.useConfluence) {
             logger.info("Fetching documents from Confluence...");
             List<Document> confluenceDocs = confluenceService.fetchPages();
-            documents.addAll(confluenceDocs);
+            docs.addAll(confluenceDocs);
             logger.info("Loaded " + confluenceDocs.size() + " documents from Confluence.");
         }
 
-        logger.info("Total " + documents.size() + " documents loaded.");
-        return documents;
+        logger.info("Total " + docs.size() + " documents loaded.");
+        return docs;
     }
 }

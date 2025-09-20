@@ -1,7 +1,6 @@
 package com.akrios.rag.Service;
 
-
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +11,7 @@ import java.util.stream.Collectors;
 @Service
 public class RagService {
 
-    private final ChatClient llm;
+    private final OllamaChatModel ollama;
     private final MultiQueryRetriever retriever;
     private final ConversationMemoryService memory;
 
@@ -31,8 +30,8 @@ public class RagService {
         Provide a detailed and accurate response based on the documents above.
         """;
 
-    public RagService(ChatClient llm, MultiQueryRetriever retriever, ConversationMemoryService memory) {
-        this.llm = llm;
+    public RagService(OllamaChatModel ollama, MultiQueryRetriever retriever, ConversationMemoryService memory) {
+        this.ollama = ollama;
         this.retriever = retriever;
         this.memory = memory;
     }
@@ -40,7 +39,7 @@ public class RagService {
     public String ask(String userId, String question, boolean useMultiQuery) {
         List<Document> docs = retriever.retrieve(question, useMultiQuery);
         String context = docs.stream()
-                .map(Document::getText) // org.springframework.ai.document.Document uses getText()
+                .map(Document::getText)
                 .collect(Collectors.joining("\n"));
 
         Map<String, Object> vars = Map.of(
@@ -54,7 +53,7 @@ public class RagService {
                 .replace("{history}", (String) vars.get("history"))
                 .replace("{question}", (String) vars.get("question"));
 
-        String answer = llm.prompt().user(prompt).call().content();
+        String answer = ollama.call(prompt);
 
         memory.append(userId, "User", question);
         memory.append(userId, "AI", answer);

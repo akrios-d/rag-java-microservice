@@ -56,7 +56,6 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	implementation("org.springframework.ai:spring-ai-client-chat")
-	implementation("org.springframework.ai:spring-ai-core")
 }
 
 dependencyManagement {

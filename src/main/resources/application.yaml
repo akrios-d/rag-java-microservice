@@ -9,8 +9,6 @@ spring:
       embedding:
         options:
           model: nomic-embed-text
-      pgvector:
-        initialize-schema: true
   application:
     name: rag
   management:
@@ -24,3 +22,11 @@ server:
 
 rag:
   useConfluence: false
+  vectorstore:
+    type: chroma   # chroma or postgres
+    chroma:
+      collection-name: rag_collection
+    postgres:
+      url: jdbc:postgresql://localhost:5432/rag
+      username: rag_user
+      password: rag_pass
