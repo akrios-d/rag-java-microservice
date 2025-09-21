@@ -1,0 +1,28 @@
+# ===============================
+# 1. Build Stage
+# ===============================
+FROM gradle:8.10.2-jdk21 AS builder
+# Gradle official image (JDK 21). Java 24 code compiles fine.
+
+WORKDIR /app
+COPY --chown=gradle:gradle . .
+
+# Build fat JAR (skip tests for faster build)
+RUN gradle clean build -x test
+
+# ===============================
+# 2. Runtime Stage (Distroless)
+# ===============================
+FROM gcr.io/distroless/java21-debian12:nonroot
+
+WORKDIR /app
+
+# Copy fat JAR from build stage
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Run as nonroot (provided by distroless)
+USER nonroot
+
+EXPOSE 8081
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
