@@ -93,7 +93,7 @@ public class VectorStoreService {
         return results;
     }
 
-    private List<Document> chunkDocuments(List<Document> docs) {
+    public List<Document> chunkDocuments(List<Document> docs) {
         logger.info("Starting document chunking with size=" + DEFAULT_CHUNK_SIZE +
                 " and overlap=" + DEFAULT_CHUNK_OVERLAP);
         List<Document> chunks = new ArrayList<>();
