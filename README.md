@@ -34,7 +34,7 @@ This will start:
 
 - RAG API → [http://localhost:8081/query](http://localhost:8081/query)  
 - Ollama health → [http://localhost:11434/api/tags](http://localhost:11434/api/tags)  
-- Chroma API → [http://localhost:8000/api/v1/heartbeat](http://localhost:8000/api/v1/heartbeat)  
+- Chroma API → [http://localhost:8000/api/v2/heartbeat](http://localhost:8000/api/v2/heartbeat)  
 
 ---
 
