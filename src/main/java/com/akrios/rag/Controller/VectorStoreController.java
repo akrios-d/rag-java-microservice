@@ -23,7 +23,7 @@ public class VectorStoreController {
     public String initializeVectorStore() {
         log.info("Received request to initialize vector store...");
         try {
-            etlInitializerService.initialize();
+            etlInitializerService.initializeVectorStore();
             return "Vector store initialized successfully!";
         } catch (Exception e) {
             log.error("Error initializing vector store: {}", e.getMessage());
@@ -38,7 +38,7 @@ public class VectorStoreController {
     public String reindexVectorStore() {
         log.info("Reindexing vector store...");
         try {
-            etlInitializerService.initialize();
+            etlInitializerService.initializeVectorStore();
             return "Vector store reindexed successfully!";
         } catch (Exception e) {
             log.error("Error reindexing vector store: {}", e.getMessage());

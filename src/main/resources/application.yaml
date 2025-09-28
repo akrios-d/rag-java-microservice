@@ -14,11 +14,26 @@ spring:
           include: false
           pull-model-strategy: WHEN_MISSING
     vectorstore:
-      chroma:
-        persist-directory: ./data/chroma
-        initialize-schema: true
-        memory: true
-        collection-name: rag_collection
+      type: pgvector
+      pgvector:
+        url: jdbc:postgresql://localhost:5432/rag_db
+        username: postgres
+        password: password
+        table-name: documents
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rag_db
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
 
   application:
     name: rag
