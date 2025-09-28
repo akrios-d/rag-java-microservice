@@ -1,15 +1,15 @@
 package com.akrios.rag.Service.Core;
 
 import com.akrios.rag.Prompts.PromptTemplates;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
 import java.util.logging.Logger;
 
 @Service
+@Slf4j
 public class DocWriterService {
-
-    private static final Logger logger = Logger.getLogger(DocWriterService.class.getName());
 
     private final OllamaChatModel chatModel;
 
@@ -24,12 +24,12 @@ public class DocWriterService {
      * @return The full documentation text
      */
     public String generateDocumentation(String collectedRequirements) {
-        logger.info("Generating documentation from collected requirements...");
+        log.info("Generating documentation from collected requirements...");
         String prompt = PromptTemplates.SYSTEM_DOC_WRITER
                 + "\n\nRequirements:\n" + collectedRequirements;
 
         String document = chatModel.call(prompt);
-        logger.info("Documentation generation complete. Length: " + (document != null ? document.length() : 0));
+        log.info("Documentation generation complete. Length: {}", document != null ? document.length() : 0);
         return document;
     }
 }

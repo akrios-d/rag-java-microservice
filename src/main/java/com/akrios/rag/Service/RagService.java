@@ -1,6 +1,7 @@
 package com.akrios.rag.Service;
 
 import com.akrios.rag.Service.Core.MultiQueryRetriever;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -18,9 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
+@Slf4j
 public class RagService {
-
-    private static final Logger logger = LoggerFactory.getLogger(RagService.class);
 
     private final OllamaChatModel ollama;
     private final MultiQueryRetriever retriever;
@@ -33,18 +33,18 @@ public class RagService {
     }
 
     public String ask(String userId, String question, boolean useMultiQuery) {
-        logger.info("Received question from user [{}]: {}", userId, question);
-        logger.debug("Multi-query mode: {}", useMultiQuery);
+        log.info("Received question from user [{}]: {}", userId, question);
+        log.debug("Multi-query mode: {}", useMultiQuery);
 
         // Step 1: Retrieve documents
         List<Document> docs = retriever.retrieve(question, useMultiQuery);
-        logger.info("Retrieved {} documents from vector store", docs.size());
+        log.info("Retrieved {} documents from vector store", docs.size());
 
         String context = docs.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n"));
 
-        logger.debug("Constructed context: {}", context);
+        log.debug("Constructed context: {}", context);
 
         // Step 2: Build prompt history
         List<Message> messages = chatMemory.get(userId);  // returns List<Message>
@@ -59,16 +59,16 @@ public class RagService {
                 .replace("{history}", history)
                 .replace("{question}", question);
 
-        logger.debug("Final prompt sent to Ollama:\n{}", prompt);
+        log.debug("Final prompt sent to Ollama:\n{}", prompt);
 
         // Step 3: Get answer from Ollama
         String answer = ollama.call(prompt);
-        logger.info("Generated answer length: {}", answer != null ? answer.length() : 0);
+        log.info("Generated answer length: {}", answer != null ? answer.length() : 0);
 
         // Step 4: Save messages into ChatMemory
         chatMemory.add(userId, new UserMessage(question));
         chatMemory.add(userId, new AssistantMessage(answer));
-        logger.info("Chat memory updated for user [{}]", userId);
+        log.info("Chat memory updated for user [{}]", userId);
 
         return answer;
     }

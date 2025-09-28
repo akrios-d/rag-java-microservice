@@ -8,4 +8,7 @@ public class DocumentLoaderConfig {
 
     @Value("${rag.useConfluence:false}")
     public boolean useConfluence;
+
+    @Value("${rag.startup:false}")
+    public boolean startup;
 }

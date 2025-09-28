@@ -1,5 +1,6 @@
 package com.akrios.rag.Service.Core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
@@ -11,9 +12,8 @@ import java.util.stream.Collectors;
 import static com.akrios.rag.Prompts.PromptTemplates.MULTI_QUERY_SYSTEM_PROMPT;
 
 @Service
+@Slf4j
 public class MultiQueryRetriever {
-
-    private static final Logger logger = Logger.getLogger(MultiQueryRetriever.class.getName());
 
     private final OllamaChatModel chatModel;
     private final VectorStoreService vectorStore;
@@ -24,39 +24,39 @@ public class MultiQueryRetriever {
     }
 
     public List<Document> retrieve(String question, boolean useMultiQuery) {
-        logger.info("Starting retrieval for question: \"" + question + "\" | MultiQuery=" + useMultiQuery);
+        log.info("Starting retrieval for question: \"{}\" | MultiQuery={}", question, useMultiQuery);
 
         if (!useMultiQuery) {
-            logger.info("Using single-query retrieval...");
+            log.info("Using single-query retrieval...");
             List<Document> singleResults = vectorStore.search(question, 5);
-            logger.info("Retrieved " + singleResults.size() + " documents for single query.");
+            log.info("Retrieved {} documents for single query.", singleResults.size());
             return singleResults;
         }
 
         // Build the multi-query prompt
         String prompt = MULTI_QUERY_SYSTEM_PROMPT + "\n\nUser Question: " + question;
-        logger.info("Generated MultiQuery prompt:\n" + prompt);
+        log.info("Generated MultiQuery prompt:\n{}", prompt);
 
         // Call Ollama to generate variations
         String expanded = chatModel.call(prompt);
-        logger.info("Ollama expansion raw response:\n" + expanded);
+        log.info("Ollama expansion raw response:\n{}", expanded);
 
         List<String> variations = Arrays.stream(expanded.split("\n"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
 
-        logger.info("Generated " + variations.size() + " query variations: " + variations);
+        log.info("Generated {} query variations: {}", variations.size(), variations);
 
         List<Document> results = new ArrayList<>();
         for (String q : variations) {
             List<Document> docs = vectorStore.search(q, 5);
-            logger.info("Variation: \"" + q + "\" -> Retrieved " + docs.size() + " documents");
+            log.info("Variation: \"{}\" -> Retrieved {} documents", q, docs.size());
             results.addAll(docs);
         }
 
         List<Document> distinctResults = results.stream().distinct().collect(Collectors.toList());
-        logger.info("Final distinct result set contains " + distinctResults.size() + " documents.");
+        log.info("Final distinct result set contains {} documents.", distinctResults.size());
 
         return distinctResults;
     }

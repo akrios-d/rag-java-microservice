@@ -2,6 +2,7 @@ package com.akrios.rag.Service;
 
 import com.akrios.rag.Prompts.PromptTemplates;
 import com.akrios.rag.Service.Core.DocWriterService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +12,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class RequirementsAnalystService {
-
-    private static final Logger logger = Logger.getLogger(RequirementsAnalystService.class.getName());
 
     private final OllamaChatModel chatModel;
     private final DocWriterService docWriterService;
@@ -30,7 +30,7 @@ public class RequirementsAnalystService {
      * Handle user interaction with the analyst agent
      */
     public String interact(String userId, String userMessage) {
-        logger.info("User [" + userId + "] message: " + userMessage);
+        log.info("User [{}] message: {}", userId, userMessage);
 
         // Initialize memory for new user
         chatMemory.putIfAbsent(userId, new ArrayList<>());
@@ -39,7 +39,7 @@ public class RequirementsAnalystService {
 
         // If user types "generate", we finalize
         if ("generate".equalsIgnoreCase(userMessage.trim())) {
-            logger.info("User [" + userId + "] requested document generation.");
+            log.info("User [{}] requested document generation.", userId);
             String collectedRequirements = memory.stream()
                     .filter(msg -> !msg.equalsIgnoreCase("generate"))
                     .collect(Collectors.joining("\n"));
@@ -49,7 +49,7 @@ public class RequirementsAnalystService {
 
             // Call Doc Writer to generate documentation
             String document = docWriterService.generateDocumentation(collectedRequirements);
-            logger.info("Documentation generated for user [" + userId + "]");
+            log.info("Documentation generated for user [{}]", userId);
             return document;
         }
 
@@ -60,7 +60,7 @@ public class RequirementsAnalystService {
                 + "\n\nUser just said:\n" + userMessage;
 
         String partialResponse = chatModel.call(prompt);
-        logger.info("Partial response generated for user [" + userId + "]");
+        log.info("Partial response generated for user [{}]", userId);
 
         memory.add("AI: " + partialResponse);
         return partialResponse;

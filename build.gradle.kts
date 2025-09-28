@@ -45,6 +45,7 @@ dependencies {
 	//implementation("org.springframework.ai:spring-ai-starter-model-stability-ai")
 	implementation("org.springframework.ai:spring-ai-starter-vector-store-chroma")
 	implementation("org.springframework.ai:spring-ai-chroma-store")
+    implementation("org.springframework.ai:spring-ai-starter-vector-store-chroma")
 	//implementation("org.springframework.ai:spring-ai-starter-vector-store-elasticsearch")
 	//implementation("org.springframework.ai:spring-ai-starter-vector-store-mongodb-atlas")
 	//implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")

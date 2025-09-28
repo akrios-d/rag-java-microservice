@@ -1,30 +1,32 @@
 package com.akrios.rag.Controller;
 
+import com.akrios.rag.Service.Core.ETLInitializerService;
 import com.akrios.rag.Service.Core.VectorStoreService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/v1/vectorstore")
+@Slf4j
 public class VectorStoreController {
 
-    private static final Logger logger = Logger.getLogger(VectorStoreController.class.getName());
+    private final ETLInitializerService etlInitializerService;
 
-    private final VectorStoreService vectorStoreService;
-
-    public VectorStoreController(VectorStoreService vectorStoreService) {
-        this.vectorStoreService = vectorStoreService;
+    public VectorStoreController(ETLInitializerService etlInitializerService) {
+        this.etlInitializerService = etlInitializerService;
     }
+
 
     @PostMapping("/initialize")
     public String initializeVectorStore() {
-        logger.info("Received request to initialize vector store...");
+        log.info("Received request to initialize vector store...");
         try {
-            vectorStoreService.initialize();
+            etlInitializerService.initialize();
             return "Vector store initialized successfully!";
         } catch (Exception e) {
-            logger.severe("Error initializing vector store: " + e.getMessage());
+            log.error("Error initializing vector store: {}", e.getMessage());
             return "Error initializing vector store: " + e.getMessage();
         }
     }
@@ -34,12 +36,12 @@ public class VectorStoreController {
      */
     @PostMapping("/reindex")
     public String reindexVectorStore() {
-        logger.info("Reindexing vector store...");
+        log.info("Reindexing vector store...");
         try {
-            vectorStoreService.initialize();
+            etlInitializerService.initialize();
             return "Vector store reindexed successfully!";
         } catch (Exception e) {
-            logger.severe("Error reindexing vector store: " + e.getMessage());
+            log.error("Error reindexing vector store: {}", e.getMessage());
             return "Error reindexing vector store: " + e.getMessage();
         }
     }

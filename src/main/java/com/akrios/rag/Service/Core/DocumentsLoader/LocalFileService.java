@@ -1,5 +1,6 @@
 package com.akrios.rag.Service.Core.DocumentsLoader;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -13,24 +14,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Service
+@Slf4j
 public class LocalFileService {
 
-    private static final Logger logger = Logger.getLogger(LocalFileService.class.getName());
     private static final String LOCAL_FILES_PATH = "classpath:local_files/*";
 
     public List<Document> loadLocalFiles() {
-        logger.info("=== Local File Loader Started ===");
+        log.info("=== Local File Loader Started ===");
         List<Document> docs = new ArrayList<>();
 
         try {
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
             Resource[] resources = resolver.getResources(LOCAL_FILES_PATH);
 
-            logger.info("Found " + resources.length + " resources in " + LOCAL_FILES_PATH);
+            log.info("Found {} resources in " + LOCAL_FILES_PATH, resources.length);
 
             for (Resource res : resources) {
                 if (!res.exists() || !res.isFile()) {
-                    logger.warning("Skipping resource (not a file or does not exist): " + res.getFilename());
+                    log.warn("Skipping resource (not a file or does not exist): {}", res.getFilename());
                     continue;
                 }
 
@@ -45,12 +46,12 @@ public class LocalFileService {
                         content.append(line).append("\n");
                     }
                 } catch (Exception ex) {
-                    logger.log(Level.SEVERE, "Failed to read file: " + filename, ex);
+                    log.error("Failed to read file: {}", filename, ex);
                     continue; // skip this file but continue with others
                 }
 
                 if (content.isEmpty()) {
-                    logger.warning("Skipping empty file: " + filename);
+                    log.warn("Skipping empty file: {}", filename);
                     continue;
                 }
 
@@ -65,13 +66,13 @@ public class LocalFileService {
                         .build();
 
                 docs.add(doc);
-                logger.info("Loaded file: " + filename + " | type=" + fileType + " | size=" + content.length() + " chars");
+                log.info("Loaded file: {} | type={} | size={} chars", filename, fileType, content.length());
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error resolving resources from path: " + LOCAL_FILES_PATH, e);
+            log.error("Error resolving resources from path: " + LOCAL_FILES_PATH, e);
         }
 
-        logger.info("=== Local File Loader Completed. Total documents: " + docs.size() + " ===");
+        log.info("=== Local File Loader Completed. Total documents: {} ===", docs.size());
         return docs;
     }
 

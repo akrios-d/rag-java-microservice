@@ -30,10 +30,17 @@ public class DocumentLoaderService {
     public List<Document> loadDocuments() {
         logger.info("=== Document Loading Started ===");
 
+        List<Document> docs = new ArrayList<>();
+
         // Load local files
-        logger.info("Attempting to load documents from local files...");
-        List<Document> docs = new ArrayList<>(localFileService.loadLocalFiles());
-        logger.info("Loaded " + docs.size() + " documents from local files.");
+        if(config.startup) {
+            logger.info("Attempting to load documents from local files...");
+            docs.addAll(localFileService.loadLocalFiles());
+            logger.info("Loaded " + docs.size() + " documents from local files.");
+        }
+        else {
+            config.startup = true;
+        }
 
         // Load Confluence docs if enabled
         if (config.useConfluence) {
