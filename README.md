@@ -66,9 +66,15 @@ And optionally pull LLMs:
 docker exec -it ollama ollama pull llama3.2
 ```
 
-Chroma Locally
-```bash
-docker run -it --rm --name chroma -p 8000:8000 ghcr.io/chroma-core/chroma:1.0.0
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE documents (
+id UUID PRIMARY KEY,
+content TEXT NOT NULL,
+metadata JSONB,
+embedding VECTOR(384) -- ajuste para o tamanho do embedding do seu modelo
+);
 ```
 
 ---
