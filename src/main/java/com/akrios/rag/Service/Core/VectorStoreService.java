@@ -1,9 +1,9 @@
 package com.akrios.rag.Service.Core;
 
-import com.akrios.rag.Service.Core.DocumentLoaderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
@@ -19,18 +19,12 @@ public class VectorStoreService {
     private static final int BATCH_SIZE = 100;
 
     private final VectorStore vectorStore; // PGVector backend
-    private final EmbeddingModel embeddingModel;
     private final DocumentLoaderService loaderService;
-
-    // In-memory cache for faster searches
-    private final List<Document> inMemoryDocs = new ArrayList<>();
-    private final List<double[]> inMemoryEmbeddings = new ArrayList<>();
 
     public VectorStoreService(VectorStore vectorStore,
                               EmbeddingModel embeddingModel,
                               DocumentLoaderService loaderService) {
         this.vectorStore = vectorStore;
-        this.embeddingModel = embeddingModel;
         this.loaderService = loaderService;
     }
 
@@ -47,7 +41,7 @@ public class VectorStoreService {
             List<Document> chunkedDocs = chunkDocuments(rawDocs);
             log.info("Chunked documents into {} chunks.", chunkedDocs.size());
 
-            batchAddToVectorStore(chunkedDocs, BATCH_SIZE);
+            batchAddToVectorStore(chunkedDocs);
             log.info("Vector store initialization completed successfully.");
 
         } catch (Exception e) {
@@ -80,7 +74,6 @@ public class VectorStoreService {
                         .metadata(doc.getMetadata())
                         .build();
                 chunks.add(chunk);
-                cacheInMemory(chunk);
 
                 start += DEFAULT_CHUNK_SIZE - DEFAULT_CHUNK_OVERLAP;
             }
@@ -90,22 +83,14 @@ public class VectorStoreService {
         return chunks;
     }
 
-    private void cacheInMemory(Document doc) {
-        float[] embArray = embeddingModel.embed(doc.getText());
-        double[] emb = new double[embArray.length];
-        for (int i = 0; i < embArray.length; i++) emb[i] = embArray[i];
-        inMemoryDocs.add(doc);
-        inMemoryEmbeddings.add(emb);
-    }
-
-    private void batchAddToVectorStore(List<Document> chunkedDocs, int batchSize) {
+    private void batchAddToVectorStore(List<Document> chunkedDocs) {
         int total = chunkedDocs.size();
-        for (int i = 0; i < total; i += batchSize) {
-            int end = Math.min(i + batchSize, total);
+        for (int i = 0; i < total; i += VectorStoreService.BATCH_SIZE) {
+            int end = Math.min(i + VectorStoreService.BATCH_SIZE, total);
             List<Document> batch = chunkedDocs.subList(i, end);
+            log.info("Adding batch {}/{} (size={})", i / VectorStoreService.BATCH_SIZE + 1, (total + VectorStoreService.BATCH_SIZE - 1) / VectorStoreService.BATCH_SIZE, batch.size());
             try {
-                log.info("Adding batch {}/{} (size={})", i / batchSize + 1, (total + batchSize - 1) / batchSize, batch.size());
-                vectorStore.add(batch); // Salva direto no PGVector
+                vectorStore.add(batch);
             } catch (Exception e) {
                 log.error("Failed to add batch to vector store: {}", e.getMessage(), e);
             }
@@ -125,17 +110,11 @@ public class VectorStoreService {
     public List<Document> search(String query, int topK) {
         log.info("Searching query: '{}' topK={}", query, topK);
         try {
-            float[] queryVector = embeddingModel.embed(query);
-            // PGVector backend no Spring AI ainda não tem similaritySearch nativo,
-            // então você pode usar vectorStore.query ou implementá-lo via SQL
+            return vectorStore.similaritySearch(new SearchRequest() )
             return vectorStore.similaritySearch(query);
         } catch (Exception e) {
             log.error("Failed to search vector store: {}", e.getMessage(), e);
             return Collections.emptyList();
         }
-    }
-
-    public List<Document> getInMemoryDocs() {
-        return Collections.unmodifiableList(inMemoryDocs);
     }
 }
