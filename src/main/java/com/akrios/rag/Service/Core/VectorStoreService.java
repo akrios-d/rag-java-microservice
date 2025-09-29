@@ -110,8 +110,7 @@ public class VectorStoreService {
     public List<Document> search(String query, int topK) {
         log.info("Searching query: '{}' topK={}", query, topK);
         try {
-            return vectorStore.similaritySearch(new SearchRequest() )
-            return vectorStore.similaritySearch(query);
+            return vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(topK).build());
         } catch (Exception e) {
             log.error("Failed to search vector store: {}", e.getMessage(), e);
             return Collections.emptyList();
