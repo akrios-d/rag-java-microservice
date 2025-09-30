@@ -47,4 +47,4 @@ logging:
     root: INFO
     com.akrios.rag: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%level] [appId:%X{appId}] [corrId:%X{corrId}] - %msg%n"
+    console: ${LOG_PATTERN:time=%d{YYYY-MM-DDThh:mm:ss.sssZ}|level=%-5level|app_id=${spring.application.name}|component_id=%C{1.}|corrId=%X{Correlationid}|trace=%X{traceId:-}|span=%X{spanId:-}|%msg%n%throwable}
